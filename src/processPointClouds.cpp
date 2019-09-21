@@ -1,6 +1,7 @@
 // PCL lib Functions for processing point clouds 
 
 #include "processPointClouds.h"
+#include <unordered_set>
 
 
 //constructor:
@@ -65,23 +66,87 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
 
 
 template<typename PointT>
-std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold)
+std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::SegmentPlane(
+    typename pcl::PointCloud<PointT>::Ptr cloud, 
+    int maxIterations, 
+    float distanceThreshold)
 {
-    // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
-    // TODO:: Fill in this function to find inliers for the cloud.
+	pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients ());
+    /* 
     pcl::SACSegmentation<PointT> seg;
-	pcl::PointIndices::Ptr inliers(new pcl::PointIndices()); // 存储内点，使用的点
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients ()); // 存储输出的模型的系数
     seg.setOptimizeCoefficients (true); // optional
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
     seg.setMaxIterations (maxIterations);
     seg.setDistanceThreshold (distanceThreshold);
-
     seg.setInputCloud(cloud);
     seg.segment(*inliers, *coefficients);    
+     */
 
+    std::unordered_set<int> set_inliersResult;
+	srand(time(NULL));
+	
+	pcl::PointXYZ p1, p2, p3;
+
+	// For max iterations 
+	while (maxIterations--)
+	{
+		std::unordered_set<int> set_inliers;
+
+		// Randomly sample subset and fit line
+		while (set_inliers.size() < 3)
+		{
+			set_inliers.insert(rand() % (cloud->points.size()));
+		}
+		
+		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
+		auto iter = set_inliers.begin();
+		x1 = cloud->points[*iter].x;
+		y1 = cloud->points[*iter].y;
+		z1 = cloud->points[*iter].z;
+		iter++;
+		x2 = cloud->points[*iter].x;
+		y2 = cloud->points[*iter].y;
+		z2 = cloud->points[*iter].z;
+		iter++;
+		x3 = cloud->points[*iter].x;
+		y3 = cloud->points[*iter].y;
+		z3 = cloud->points[*iter].z;
+		
+		float a = (y2 - y1)*(z3 - z1) - (z2 - z1)*(y3 - y1);
+		float b = (z2 - z1)*(x3 - x1) - (x2 - x1)*(z3 - z1);
+		float c = (x2 - x1)*(y3 - y1) - (y2 - y1)*(x3 - x1);
+		float d = -(a*x1 + b*y1 + c*z1);
+		for (size_t i = 0; i < cloud->points.size(); i++)
+		{
+			if (set_inliers.count(i) > 0)
+				continue;
+			
+			auto point = cloud->points[i];
+
+			float x4 = point.x;
+			float y4 = point.y;
+			float z4 = point.z;
+
+			// Measure distance between every point and fitted line
+			float d = fabs(a*x4 + b*y4 + c*z4 + d) / sqrt(a*a + b*b + c*c);
+
+			// If distance is smaller than threshold count it as inlier
+			if (d <= distanceThreshold)
+				set_inliers.insert(i);
+		}
+
+		if (set_inliers.size() > set_inliersResult.size())
+			set_inliersResult = set_inliers;
+	}
+
+    for (auto i : set_inliersResult)
+    {
+        inliers->indices.push_back(i);
+    }
+    
     if (inliers->indices.size() == 0) {
         std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
     }
