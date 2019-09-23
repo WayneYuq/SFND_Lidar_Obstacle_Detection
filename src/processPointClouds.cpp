@@ -74,7 +74,7 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
     auto startTime = std::chrono::steady_clock::now();
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients ());
-    /* 
+    
     pcl::SACSegmentation<PointT> seg;
     seg.setOptimizeCoefficients (true); // optional
     seg.setModelType (pcl::SACMODEL_PLANE);
@@ -83,9 +83,9 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
     seg.setDistanceThreshold (distanceThreshold);
     seg.setInputCloud(cloud);
     seg.segment(*inliers, *coefficients);    
-     */
+    
 
-    std::unordered_set<int> set_inliersResult;
+    /* std::unordered_set<int> set_inliersResult;
 	srand(time(NULL));
 	
 	pcl::PointXYZ p1, p2, p3;
@@ -145,7 +145,7 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
     for (auto i : set_inliersResult)
     {
         inliers->indices.push_back(i);
-    }
+    } */
     
     if (inliers->indices.size() == 0) {
         std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
@@ -179,13 +179,26 @@ std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::C
     typename pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
     tree->setInputCloud (cloud);
 
+    std::vector<pcl::PointIndices> cluster_indices;
     pcl::EuclideanClusterExtraction<PointT> ec;
     ec.setClusterTolerance (clusterTolerance);
     ec.setMinClusterSize (minSize);
     ec.setMaxClusterSize (maxSize);
     ec.setSearchMethod (tree);
     ec.setInputCloud (cloud);
-    ec.extract (clusters);
+    ec.extract (cluster_indices);
+
+    for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
+    {
+        typename pcl::PointCloud<PointT>::Ptr cloud_cluster(new pcl::PointCloud<PointT>());
+        for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit)
+            cloud_cluster->points.push_back(cloud->points[*pit]);
+
+        cloud_cluster->width = cloud_cluster->points.size ();
+        cloud_cluster->height = 1;
+        cloud_cluster->is_dense = true;
+        clusters.push_back(cloud_cluster);
+    }
 
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
