@@ -61,7 +61,6 @@ struct KdTree
 			k++;
 		}
 		*temp = new Node(point, id);
-		// insertHelper(&root, 0, point, id);
 	}
 
 	void searchHelper(std::vector<float> target, Node* node, int depth, float distanceTol, std::vector<int>& ids)

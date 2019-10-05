@@ -106,7 +106,6 @@ std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<flo
         }
     }
     return clusters;
-
 }
 
 int main ()

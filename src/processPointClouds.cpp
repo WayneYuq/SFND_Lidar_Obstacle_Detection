@@ -105,18 +105,6 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
     auto startTime = std::chrono::steady_clock::now();
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
     
-    /* 
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients ());
-    pcl::SACSegmentation<PointT> seg;
-    seg.setOptimizeCoefficients (true); // optional
-    seg.setModelType (pcl::SACMODEL_PLANE);
-    seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setMaxIterations (maxIterations);
-    seg.setDistanceThreshold (distanceThreshold);
-    seg.setInputCloud(cloud);
-    seg.segment(*inliers, *coefficients);    
-     */
-
     std::unordered_set<int> set_inliersResult;
 	srand(time(NULL));
 	
