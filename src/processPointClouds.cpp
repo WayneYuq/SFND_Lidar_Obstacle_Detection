@@ -104,8 +104,9 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
 {
     auto startTime = std::chrono::steady_clock::now();
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients ());
     
+    /* 
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients ());
     pcl::SACSegmentation<PointT> seg;
     seg.setOptimizeCoefficients (true); // optional
     seg.setModelType (pcl::SACMODEL_PLANE);
@@ -114,9 +115,9 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
     seg.setDistanceThreshold (distanceThreshold);
     seg.setInputCloud(cloud);
     seg.segment(*inliers, *coefficients);    
-    
+     */
 
-    /* std::unordered_set<int> set_inliersResult;
+    std::unordered_set<int> set_inliersResult;
 	srand(time(NULL));
 	
 	pcl::PointXYZ p1, p2, p3;
@@ -150,7 +151,7 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
 		float b = (z2 - z1)*(x3 - x1) - (x2 - x1)*(z3 - z1);
 		float c = (x2 - x1)*(y3 - y1) - (y2 - y1)*(x3 - x1);
 		float d = -(a*x1 + b*y1 + c*z1);
-		for (size_t i = 0; i < cloud->points.size(); i++)
+		for (int i = 0; i < cloud->points.size(); i++)
 		{
 			if (set_inliers.count(i) > 0)
 				continue;
@@ -162,10 +163,10 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
 			float z4 = point.z;
 
 			// Measure distance between every point and fitted line
-			float d = fabs(a*x4 + b*y4 + c*z4 + d) / sqrt(a*a + b*b + c*c);
+			float dis = fabs(a*x4 + b*y4 + c*z4 + d) / sqrt(a*a + b*b + c*c);
 
 			// If distance is smaller than threshold count it as inlier
-			if (d <= distanceThreshold)
+			if (dis <= distanceThreshold)
 				set_inliers.insert(i);
 		}
 
@@ -174,9 +175,7 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
 	}
 
     for (auto i : set_inliersResult)
-    {
         inliers->indices.push_back(i);
-    } */
     
     if (inliers->indices.size() == 0) {
         std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
